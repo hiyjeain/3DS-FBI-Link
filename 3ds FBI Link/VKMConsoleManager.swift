@@ -17,9 +17,9 @@ protocol ConsoleManagementDelegate {
 }
 
 @objc(ConsoleManagerItem)
-class ConsoleManagerItem:NSObject {
-    public var ipAddress:String = "0.0.0.0"
-    public var port:UInt16 = 5000
+class ConsoleManagerItem: NSObject {
+    @objc public var ipAddress:String = "0.0.0.0"
+    @objc public var port:UInt16 = 5000
     
     override init() {
         self.ipAddress = "0.0.0.0"
@@ -35,16 +35,16 @@ class ConsoleManagerItem:NSObject {
 
 
 @objc(VKMConsoleManager)
-class VKMConsoleManager: NSObject, GCDAsyncSocketDelegate, NSTableViewDataSource {
+class VKMConsoleManager: NSObject, NSTableViewDataSource {
     public var delegate: ConsoleManagementDelegate?
-    var dataArray:[ConsoleManagerItem] = [ConsoleManagerItem]()
+    @objc var dataArray:[ConsoleManagerItem] = [ConsoleManagerItem]()
     var sockets = [GCDAsyncSocket]()
     override init() {
         super.init()
         self.performSelector(inBackground: #selector(self.detectConsoles), with: self)
     }
     
-    func detectConsoles(sender: Any) {
+    @objc func detectConsoles(sender: Any) {
         // Create a Task instance
         let task = Process()
         
@@ -138,33 +138,35 @@ class VKMConsoleManager: NSObject, GCDAsyncSocketDelegate, NSTableViewDataSource
             }
         }
     }
-    
-    @objc public func socket(_ sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
-        delegate?.connectedToConsole(dataArray.first { item in
-            return item.ipAddress == host
-        }!)
-    }
-    
-    @objc public func socketDidDisconnect(_ sock: GCDAsyncSocket, withError err: Error?) {
-        if(err != nil) {
-            print("Socket disconnected, error \(err)")
-        } else {
-            print("Socket disconnected. All done.")
+
+}
+
+extension VKMConsoleManager: GCDAsyncSocketDelegate {
+        @objc public func socket(_ sock: GCDAsyncSocket, didConnectToHost host: String, port: UInt16) {
+            delegate?.connectedToConsole(dataArray.first { item in
+                return item.ipAddress == host
+            }!)
         }
-        var allDisconnected = true
-        for socket in sockets {
-            if socket.isConnected {allDisconnected = false}
+        
+        @objc public func socketDidDisconnect(_ sock: GCDAsyncSocket, withError err: Error?) {
+            if(err != nil) {
+                print("Socket disconnected, error \(err)")
+            } else {
+                print("Socket disconnected. All done.")
+            }
+            var allDisconnected = true
+            for socket in sockets {
+                if socket.isConnected {allDisconnected = false}
+            }
+            if allDisconnected {delegate?.socketsDisconnected()}
         }
-        if allDisconnected {delegate?.socketsDisconnected()}
-    }
-    
-    @objc public func socket(_ sock: GCDAsyncSocket, didWriteDataWithTag tag: Int) {
-//        print("Wrote data with tag \(tag)")
-    }
-    
-    @objc public func socket(_ sock: GCDAsyncSocket, didRead data: Data, withTag tag: Int) {
-        //getting 1 byte back from console means it's done and we should disconnect
-        sock.disconnectAfterReadingAndWriting()
-    }
-    
+        
+        @objc public func socket(_ sock: GCDAsyncSocket, didWriteDataWithTag tag: Int) {
+    //        print("Wrote data with tag \(tag)")
+        }
+        
+        @objc public func socket(_ sock: GCDAsyncSocket, didRead data: Data, withTag tag: Int) {
+            //getting 1 byte back from console means it's done and we should disconnect
+            sock.disconnectAfterReadingAndWriting()
+        }
 }

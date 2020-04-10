@@ -10,7 +10,7 @@ import Cocoa
 import CocoaAsyncSocket
 
 @objc(ViewController)
-class ViewController: NSViewController, ConsoleManagementDelegate, VKMLoggingDelegate {
+class ViewController: NSViewController {
     @IBOutlet weak var consoleManager:VKMConsoleManager?
     @IBOutlet weak var fileManager:VKMFileManager?
     @IBOutlet weak var dragView:VKMFullView?
@@ -26,7 +26,7 @@ class ViewController: NSViewController, ConsoleManagementDelegate, VKMLoggingDel
         
     }
     
-    public var status = NSMutableDictionary()
+    @objc public var status = NSMutableDictionary()
 
     override func viewDidLoad() {
         NSLog("Hi")
@@ -39,25 +39,7 @@ class ViewController: NSViewController, ConsoleManagementDelegate, VKMLoggingDel
         self.status.setValue(false, forKey:"running")
         self.status.setValue("Start", forKey: "actionTitle")
     }
-    
-    func socketsDisconnected() {
-        self.logViewString("All consoles finished downloading.\n")
-        self.stopServing()
-    }
-    
-    func foundConsoleWith(consoleManagerItem: ConsoleManagerItem) {
-        self.logViewString("Autodetected 3DS at \(consoleManagerItem.ipAddress), guessing port 5000.\n")
-    }
-    
-    func connectedToConsole(_ console: ConsoleManagerItem) {
-        let logString = "Connected to 3DS at \(console.ipAddress).\n"
-        self.logViewString(logString)
-        //logView?.scroll
-    }
 
-    func logStatus(_ status: String) {
-        logViewString(status)
-    }
     
     func logViewString(_ string: String) {
         logView.textStorage?.append(NSAttributedString(string: string))
@@ -99,6 +81,29 @@ class ViewController: NSViewController, ConsoleManagementDelegate, VKMLoggingDel
         consoleManager?.dataArray.removeAll()
         consoleManager?.detectConsoles(sender: self)
         logView.textStorage?.mutableString.setString("<reset>\n")
+    }
+}
+
+extension ViewController: ConsoleManagementDelegate {
+    func socketsDisconnected() {
+        self.logViewString("All consoles finished downloading.\n")
+        self.stopServing()
+    }
+    
+    func foundConsoleWith(consoleManagerItem: ConsoleManagerItem) {
+        self.logViewString("Autodetected 3DS at \(consoleManagerItem.ipAddress), guessing port 5000.\n")
+    }
+    
+    func connectedToConsole(_ console: ConsoleManagerItem) {
+        let logString = "Connected to 3DS at \(console.ipAddress).\n"
+        self.logViewString(logString)
+        //logView?.scroll
+    }
+}
+
+extension ViewController: VKMLoggingDelegate {
+    func logStatus(_ status: String) {
+        logViewString(status)
     }
 }
 
